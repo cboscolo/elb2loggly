@@ -1,0 +1,22 @@
+{
+  "name": "elb2loggly",
+  "description": "This is a Node.js AWS Lambda script that converts the ELB logs written to S3 by the amazon ELBs into JSON that is then pushed to the loggly bulk uploader API.",
+  "author": "Chris Boscolo",
+  "repository" : {
+    "type" : "git",
+    "url" : "git@github.com:cboscolo/elb2loggly.git"
+  },
+  "license": "Proprietary",
+  "devDependencies": {},
+  "engine": "node >= 0.10",
+  "dependencies": 
+  { "async"         : "latest"
+  , "csv-streamify" : "latest"
+  , "JSONStream"    : "latest"
+  , "lodash"        : "latest"
+  , "request"       : "latest"
+  },
+  "scripts": {
+  }
+}
+

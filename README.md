@@ -32,7 +32,7 @@ For all of the AWS setup, I used the AWS console following [this example](http:/
     * **Name:** *elb2loggly*
     * Upload lambda function (zip file you made above.)
     * **Handler*:** *elb2loggly.handler*
-    * **Role*:** In the drop down click "S3 execution role". (This will open a new window to create the role.)
+    * **Role*:** In the drop down click "S3 execution role". (This will open a new window to create the role.) Before clicking the "Allow" button to save this new Role, click the "> View Policy Document", then edit and change the Aciton from "s3:GetObject" to "s3:Get*"
     * I left the memory at 128MB.  In my testing with ELBs set upload every 5 minutes this worked for me.  You may need to bump this up if your ELB logs are larger.  
     * Same advice for Timer, I set it to 10 seconds.
 2. Configure Event Source to call elb2loggly when logs added to S3 bucket.
@@ -42,7 +42,7 @@ For all of the AWS setup, I used the AWS console following [this example](http:/
     * **Bucket:** Choose the bucket that contains your ELB logs.
     * **Event type:** Put
 
-### Configure the S3 buckets with tags the elb2loggly uses to know where to send logs.
+### Configure the S3 buckets with tags the elb2loggly uses to know where to send logs. (Alternatively, you can hard-code these values in elb2loggly.js.)
 Using S3 Management Console click the bucket that contains your ELB logs.
   1. Under Properties -> Tags add the following tag:
     * **Key:** loggly-customer-token

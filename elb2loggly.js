@@ -39,20 +39,68 @@ else console.log('Loading elb2loggly, NO default Loggly endpoint, must be set in
 // AWS logs contain the following fields: (Note: a couple are parsed from within the field.)
 // http://docs.aws.amazon.com/ElasticLoadBalancing/latest/DeveloperGuide/access-log-collection.html
 var COLUMNS = [
-              'timestamp',
-              'elb',
-              'client_ip', 'client_port', // split from client
-              'backend', 'backend_port',
-              'request_processing_time',
-              'backend_processing_time',
-              'response_processing_time',
-              'elb_status_code',
-              'backend_status_code',
-              'received_bytes',
-              'sent_bytes',
-              'request_method', // Split from request
-              'request_url'     // Split from request
+              'timestamp', //0
+              'elb', //1
+              'client_ip', //2
+              'client_port', //3 - split from client
+              'backend', //4
+              'backend_port', //5
+              'request_processing_time', //6
+              'backend_processing_time', //7
+              'response_processing_time', //8
+              'elb_status_code', //9
+              'backend_status_code', //10
+              'received_bytes', //11
+              'sent_bytes', //12
+              'request_method', //13 - Split from request
+              'request_url',     //14 - Split from request
+              'request_query_params'     //15 - Split from request
               ];
+            
+// The following column indexes will be turned into numbers so that
+// we can filter within loggly  
+var NUMERIC_COL_INDEX = [
+   6,
+   7,
+   8,
+   11,
+   12
+];
+
+//Enter any query parameters that should be removed from the URL
+var PRIVATE_QUERY_PARAMS = [
+   "authToken"
+];
+
+//Obscures the provided parameter in the URL
+//Returns the URL with the provided parameter obscured
+var OBSCURE_LENGTH = 10;
+var obscureURLParameter = function (url, parameter, obscureLength) {
+    //prefer to use l.search if you have a location/link object
+    var urlparts= url.split('?');   
+    if (urlparts.length>=2) {
+
+        var prefix= encodeURIComponent(parameter)+'=';
+        var pars= urlparts[1].split(/[&;]/g);
+
+        //reverse iteration as may be destructive
+        for (var i= pars.length; i-- > 0;) {    
+            //idiom for string.startsWith
+            if (pars[i].lastIndexOf(prefix, 0) !== -1) {  
+            	if (pars[i].length > obscureLength) {
+            		pars[i] = pars[i].substring(0, prefix.length + obscureLength) + "..."
+            	} else {
+            		pars.splice(i, 1);
+            	}
+            }
+        }
+
+        url= urlparts[0]+'?'+pars.join('&');
+        return url;
+    } else {
+        return url;
+    }
+}
 
 // Parse elb log into component parts.
 var parse_s3_log = function(data, encoding, done) {
@@ -65,19 +113,45 @@ var parse_s3_log = function(data, encoding, done) {
       data = _.flatten(data)
 
       // Pull the method from the request.  (WTF on Amazon's decision to keep these as one string.)
-      var url_mash = data.pop()
+      var url_mash = data.pop();
 
+	  //Split the url, the 2 parameter gives us only the last 2
+	  //e.g. Split POST https://secure.echoboxapp.com:443/api/authtest HTTP/1.1
+	  //into [0] - POST, [1] - https://secure.echoboxapp.com:443/api/authtest
       var url_mash = url_mash.split(' ',2)
+      var request_method = url_mash[0];
+      var request_url = url_mash[1];
 
-      data.push(url_mash[0],url_mash[1])
+      //Remove any private URL query parameters
+      _.each(PRIVATE_QUERY_PARAMS, function(param_to_remove) {
+    	request_url = obscureURLParameter(request_url,param_to_remove, OBSCURE_LENGTH);
+      });
+      
+      //Strip the query parameters into a separate field if any exist
+      var request_params = "";
+      if (request_url.indexOf('?') !== -1) {
+      	request_params = request_url.substring(request_url.indexOf('?')+1,request_url.length);
+      	request_url = request_url.substring(0,request_url.indexOf('?'));
+      }
+
+      //Add the url request back into data
+      data.push(request_method,request_url, request_params)
+      
+      //Parse the numeric columns
+      _.each(NUMERIC_COL_INDEX, function(col_index) {
+    	data[col_index] = parseFloat(data[col_index]);
+      });
 
       if ( data.length == COLUMNS.length ) {
          log =  _.zipObject(COLUMNS, data)
         this.push(log);
       } else {
-	  console.error('ELB log length ' + data.length + ' did not match COLUMNS length ' + COLUMNS.length)
+        //Log an error including the line that was excluded
+	  	console.error('ELB log length ' + data.length + ' did not match COLUMNS length ' + COLUMNS.length + ". " 
+	  		+ data.join(" "))
       }
   }
+  
   done();
 
 };

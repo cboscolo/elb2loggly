@@ -51,34 +51,40 @@ var COLUMNS = [
               'received_bytes',
               'sent_bytes',
               'request_method', // Split from request
-              'request_url'     // Split from request
+              'request_url',     // Split from request
+              'user_agent',
+              'ssl_cipher',
+              'ssl_protocol'
               ];
 
 // Parse elb log into component parts.
 var parse_s3_log = function(data, encoding, done) {
-
-  if ( data.length == 12 ) {
+  var expectedFields = 15;
+  if ( data.length == expectedFields ) {
 
       // Split clientip:port and backendip:port at index 2,3
       data.splice(3,1,data[3].split(':'))
       data.splice(2,1,data[2].split(':'))
+      
+      // Pull the method from the request.  (WTF on Amazon's decision to keep these as one string.)
+      var requestIndex = data.length - 4;
+      var url_mash = data[requestIndex];
+
+      url_mash = url_mash.split(' ',2)
+
+      data.splice(requestIndex,1, url_mash);
       data = _.flatten(data)
 
-      // Pull the method from the request.  (WTF on Amazon's decision to keep these as one string.)
-      var url_mash = data.pop()
-
-      var url_mash = url_mash.split(' ',2)
-
-      data.push(url_mash[0],url_mash[1])
-
       if ( data.length == COLUMNS.length ) {
-         log =  _.zipObject(COLUMNS, data)
-        this.push(log);
+        this.push(_.zipObject(COLUMNS, data));
       } else {
-	  console.error('ELB log length ' + data.length + ' did not match COLUMNS length ' + COLUMNS.length)
+	      console.error('ELB log length ' + data.length + ' did not match COLUMNS length ' + COLUMNS.length)
       }
+      done();
   }
-  done();
+  else {
+    done("expecting " + expectedFields + " actual fields " + data.length);
+  }
 
 };
 

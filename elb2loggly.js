@@ -20,6 +20,7 @@ var _ = require('lodash')
 LOGGLY_URL_BASE = 'https://logs-01.loggly.com/bulk/'
 BUCKET_LOGGLY_TOKEN_NAME = 'loggly-customer-token'
 BUCKET_LOGGLY_TAG_NAME = 'loggly-tag'
+BUCKET_LOGGLY_PRIVATE_URL_PARAMS_NAME = 'elb2loggly-private-url-params'
 
 // Used if no S3 bucket tag soesn't contain customer token.
 // Note: You either need to specify a cutomer token in this script or via the S3 bucket tag else an error is logged.
@@ -67,14 +68,12 @@ var NUMERIC_COL_INDEX = [
    12
 ];
 
-//Enter any query parameters that should be removed from the URL
-var PRIVATE_QUERY_PARAMS = [
-   "authToken"
-];
+//Private query parameters that should be removed/obscured from the URL
+var PRIVATE_URL_PARAMS = [];
+var PRIVATE_URL_PARAMS_MAX_LENGTH = [];
 
 //Obscures the provided parameter in the URL
 //Returns the URL with the provided parameter obscured
-var OBSCURE_LENGTH = 10;
 var obscureURLParameter = function (url, parameter, obscureLength) {
     //prefer to use l.search if you have a location/link object
     var urlparts= url.split('?');   
@@ -85,11 +84,14 @@ var obscureURLParameter = function (url, parameter, obscureLength) {
 
         //reverse iteration as may be destructive
         for (var i= pars.length; i-- > 0;) {    
-            //idiom for string.startsWith
+            //If the parameter starts with the encoded prefix
             if (pars[i].lastIndexOf(prefix, 0) !== -1) {  
-            	if (pars[i].length > obscureLength) {
+            	if (obscureLength > 0 && pars[i].length > obscureLength) {
+            		//If the total length of of the parameter is greater than
+            		//obscureLength we only take the left most characters
             		pars[i] = pars[i].substring(0, prefix.length + obscureLength) + "..."
             	} else {
+            		//Otherwise we just remove the parameter
             		pars.splice(i, 1);
             	}
             }
@@ -123,8 +125,8 @@ var parse_s3_log = function(data, encoding, done) {
       var request_url = url_mash[1];
 
       //Remove any private URL query parameters
-      _.each(PRIVATE_QUERY_PARAMS, function(param_to_remove) {
-    	request_url = obscureURLParameter(request_url,param_to_remove, OBSCURE_LENGTH);
+      _.each(PRIVATE_URL_PARAMS, function(param_to_remove, param_index) {
+    	request_url = obscureURLParameter(request_url,param_to_remove, PRIVATE_URL_PARAMS_MAX_LENGTH[param_index]);
       });
       
       //Strip the query parameters into a separate field if any exist
@@ -156,9 +158,8 @@ var parse_s3_log = function(data, encoding, done) {
 
 };
 
-
 exports.handler = function(event, context) {
-//   console.log('Received event');
+   //console.log('Received event - v2');
 
    // Get the object from the event and show its content type
    var bucket = event.Records[0].s3.bucket.name;
@@ -178,18 +179,37 @@ exports.handler = function(event, context) {
 			    s3.getBucketTagging(params, function(err, data) {
 				    if (err) { next(err); console.log(err, err.stack); } // an error occurred
 				    else {
+				    
+				    //Get an array of bucket tags
 					var s3tag = _.zipObject(_.pluck(data['TagSet'], 'Key'),
 									_.pluck(data['TagSet'], 'Value'));
 
+					//If the 'token' tag is set we use that
 					if (s3tag[BUCKET_LOGGLY_TOKEN_NAME]) {
 					    LOGGLY_URL = LOGGLY_URL_BASE + s3tag[BUCKET_LOGGLY_TOKEN_NAME];
 					    
+					    //If the 'loggly tag' tag is set we use that
 					    if ( s3tag[BUCKET_LOGGLY_TAG_NAME] ) {
 						LOGGLY_URL += '/tag/' + s3tag[BUCKET_LOGGLY_TAG_NAME];
 					    }
 					} else {
 					    LOGGLY_URL = DEFAULT_LOGGLY_URL
 					}
+				    }
+				    
+				    //If the 'private url params' tag set we parse that
+				    if (s3tag[BUCKET_LOGGLY_PRIVATE_URL_PARAMS_NAME]) {
+				    	//First we split on double forward slash
+				    	var privateParamEntries = s3tag[BUCKET_LOGGLY_PRIVATE_URL_PARAMS_NAME].split(/\/\//g);
+				    	_.each(privateParamEntries, function(entry) {
+				    		//The parameter name and max length is separated by a single forward slash
+    						var entrySplit = entry.split(/\//g);
+    						var paramName = entrySplit[0];
+    						var paramMaxLength = parseInt(entrySplit[1]);
+    						console.log('Private url parameter ' + paramName + ' will be obscured with max length '+paramMaxLength+'.');
+    						PRIVATE_URL_PARAMS.push(paramName);
+    						PRIVATE_URL_PARAMS_MAX_LENGTH.push(paramMaxLength);
+      					});
 				    }
 				    
 				    if ( LOGGLY_URL ) next();

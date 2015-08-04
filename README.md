@@ -47,9 +47,26 @@ Using S3 Management Console click the bucket that contains your ELB logs.
   1. Under Properties -> Tags add the following tag:
     * **Key:** loggly-customer-token
     * **Value:** *your-loggly-customer-token*
-  2. And optionally this tag:
+  2. And optionally this tag (will tag log entries in loggly):
     * **Key:** loggly-tag
     * **Value:** *aws-elb* (Or what ever you want.)
+
+### Private URL parameters
+If your ELB logs contain private URL parameters such as authentication tokens, e.g.:
+   
+  *https://api.loggly.com/getinfo?infoid=45&authToken=kjhs87234kjhsdf897234kjhs01ka9234*
+   
+you can obscure this information when sending the data to loggly. Add an additional tag to your S3 bucket:
+  * **Key:** elb2loggly-private-url-params
+  * **Value:** *authToken/10*
+
+This will obscure all *authToken* parameters with an obscure length of *10*, e.g.:
+  
+  *https://api.loggly.com/getinfo?infoid=45&authToken=kjhs87234k...*
+
+Notes:
+  * To remove a parameter totally use a length of *0*, e.g. *authToken/0*
+  * To obscure multiple parameters use a double forward slash as a separator in the tag value, e.g. *authToken/10//secretParam/0*
 
 ### Configure ELB to log to S3
 I'll assume you already have your ELB set up, just not logging.

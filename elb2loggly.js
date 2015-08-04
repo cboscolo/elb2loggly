@@ -54,8 +54,11 @@ var COLUMNS = [
               'received_bytes', //11
               'sent_bytes', //12
               'request_method', //13 - Split from request
-              'request_url',     //14 - Split from request
-              'request_query_params'     //15 - Split from request
+              'request_url', //14 - Split from request
+              'request_query_params', //15 - Split from request
+              'user_agent', //16
+              'ssl_cipher', //17
+              'ssl_protocol' //18
               ];
             
 // The following column indexes will be turned into numbers so that
@@ -67,6 +70,9 @@ var NUMERIC_COL_INDEX = [
    11,
    12
 ];
+
+//A counter for the total number of events parsed
+var eventsParsed = 0;
 
 //Private query parameters that should be removed/obscured from the URL
 var PRIVATE_URL_PARAMS = [];
@@ -107,20 +113,35 @@ var obscureURLParameter = function (url, parameter, obscureLength) {
 // Parse elb log into component parts.
 var parse_s3_log = function(data, encoding, done) {
 
-  if ( data.length == 12 ) {
+  //If this is a HTTP load balander we get 12 fields
+  //for HTTPs load balancers we get 15
+  if ( data.length == 12 || data.length == 15 ) {
+  
+      //Keep an easily boolean depending on the ELB type
+      var isHTTP = data.length == 12;
+      //If this is a HTTP ELB we need to get rid of the HTTPs fields in our COLUMNS array
+      if (isHTTP) {
+        COLUMNS.splice(16,3);
+      }
 
       // Split clientip:port and backendip:port at index 2,3
-      data.splice(3,1,data[3].split(':'))
-      data.splice(2,1,data[2].split(':'))
-      data = _.flatten(data)
+      data.splice(3,1,data[3].split(':'));
+      data.splice(2,1,data[2].split(':'));
+      //Ensure the data is flat
+	  data = _.flatten(data);
 
       // Pull the method from the request.  (WTF on Amazon's decision to keep these as one string.)
-      var url_mash = data.pop();
+      // This position depends on the type of ELB
+      var initialRequestPosition = isHTTP ? data.length - 1 : data.length - 4;
+      var url_mash = data[initialRequestPosition];
+      data.splice(initialRequestPosition, 1);
+      //Ensure the data is flat
+	  data = _.flatten(data);
 
 	  //Split the url, the 2 parameter gives us only the last 2
 	  //e.g. Split POST https://secure.echoboxapp.com:443/api/authtest HTTP/1.1
 	  //into [0] - POST, [1] - https://secure.echoboxapp.com:443/api/authtest
-      var url_mash = url_mash.split(' ',2)
+      url_mash = url_mash.split(' ',2)
       var request_method = url_mash[0];
       var request_url = url_mash[1];
 
@@ -136,30 +157,38 @@ var parse_s3_log = function(data, encoding, done) {
       	request_url = request_url.substring(0,request_url.indexOf('?'));
       }
 
-      //Add the url request back into data
-      data.push(request_method,request_url, request_params)
+      //Add the url request back into data array at the original position
+      data.splice(initialRequestPosition,0,request_params);
+      data.splice(initialRequestPosition,0,request_url);
+      data.splice(initialRequestPosition,0,request_method);
+      //Ensure the data is flat
+	  data = _.flatten(data);
       
-      //Parse the numeric columns
+      //Parse the numeric columns to floats
       _.each(NUMERIC_COL_INDEX, function(col_index) {
     	data[col_index] = parseFloat(data[col_index]);
       });
 
       if ( data.length == COLUMNS.length ) {
-         log =  _.zipObject(COLUMNS, data)
-        this.push(log);
+        this.push(_.zipObject(COLUMNS, data));
+        eventsParsed++;
       } else {
         //Log an error including the line that was excluded
 	  	console.error('ELB log length ' + data.length + ' did not match COLUMNS length ' + COLUMNS.length + ". " 
 	  		+ data.join(" "))
       }
+      
+      done();
+      
+  } else {
+      //Record a useful error in the lambda logs that something was wrong with the input data
+      done("Expecting " + expectedFields + " fields, actual fields " + data.length);
   }
-  
-  done();
-
 };
 
 exports.handler = function(event, context) {
-   //console.log('Received event - v2');
+   //A useful line for debugging, add a version number to see which version ran in lambda
+   console.log('Running lambda event handler.');
 
    // Get the object from the event and show its content type
    var bucket = event.Records[0].s3.bucket.name;
@@ -256,7 +285,7 @@ exports.handler = function(event, context) {
 			   } else {
 			       console.log(
 					   'Successfully uploaded ' + bucket + '/' + key +
-					   ' to ' + LOGGLY_URL
+					   ' to ' + LOGGLY_URL + ". Parsed " + eventsParsed + " events."
 					   );
 			   }
 

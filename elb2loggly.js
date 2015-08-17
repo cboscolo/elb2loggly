@@ -135,8 +135,10 @@ var parse_s3_log = function(data, encoding, done) {
       	data.splice(2,1,data[2].split(':'));
       } else {
       	//We may get here if there was a 5xx error
-      	//We will add blank string place holders for the missing data
-      	data.splice(2,1,'','');
+      	//We will add 'dash' place holders for the missing data
+      	//This is common for Apache logs when a field is blank, it is also more consistent with 
+      	//the original ELB data
+      	data.splice(2,1,'-','-');
       }
       
       //Ensure the data is flat

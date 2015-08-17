@@ -196,7 +196,7 @@ var parse_s3_log = function(data, encoding, done) {
       
   } else {
       //Record a useful error in the lambda logs that something was wrong with the input data
-      done("Expecting " + expectedFields + " fields, actual fields " + data.length);
+      done("Expecting 12 or 15 fields, actual fields " + data.length);
   }
 };
 

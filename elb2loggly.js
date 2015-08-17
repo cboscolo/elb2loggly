@@ -124,9 +124,23 @@ var parse_s3_log = function(data, encoding, done) {
         COLUMNS.splice(16,3);
       }
 
-      // Split clientip:port and backendip:port at index 2,3
+      //Split clientip:port and backendip:port at index 2,3
+      //We need to be carefull here because of potential 5xx errors which may not include 
+      //the backend:port
+      //client:port
       data.splice(3,1,data[3].split(':'));
-      data.splice(2,1,data[2].split(':'));
+      //backend:port
+      if (data[2].indexOf(':') > -1) {
+      	//If the field contains a colon we perform the normal split to get ip and port
+      	data.splice(2,1,data[2].split(':'));
+      } else {
+      	//We may get here if there was a 5xx error
+      	//We will add 'dash' place holders for the missing data
+      	//This is common for Apache logs when a field is blank, it is also more consistent with 
+      	//the original ELB data
+      	data.splice(2,1,'-','-');
+      }
+      
       //Ensure the data is flat
 	  data = _.flatten(data);
 

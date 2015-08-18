@@ -40,7 +40,7 @@ For all of the AWS setup, I used the AWS console following [this example](http:/
   2. Make sure the elb2loggly lambda function is selected, then click 'Actions->Add event source'
     * **Event source type:** S3
     * **Bucket:** Choose the bucket that contains your ELB logs.
-    * **Event type:** Put
+    * **Event type:** ObjectCreated (All)
 
 ### Configure the S3 buckets with tags the elb2loggly uses to know where to send logs. (Alternatively, you can hard-code these values in elb2loggly.js.)
 Using S3 Management Console click the bucket that contains your ELB logs.

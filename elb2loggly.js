@@ -224,8 +224,8 @@ exports.handler = function(event, context) {
 				    else {
 				    
 				    //Get an array of bucket tags
-					var s3tag = _.zipObject(_.pluck(data['TagSet'], 'Key'),
-									_.pluck(data['TagSet'], 'Value'));
+					var s3tag = _.zipObject(_.map(data['TagSet'], 'Key'),
+									_.map(data['TagSet'], 'Value'));
 
 					//If the 'token' tag is set we use that
 					if (s3tag[BUCKET_LOGGLY_TOKEN_NAME]) {

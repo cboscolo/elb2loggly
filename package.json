@@ -9,14 +9,13 @@
   "license": "Proprietary",
   "devDependencies": {},
   "engine": "node >= 0.10",
-  "dependencies": 
-  { "async"         : "latest"
-  , "csv-streamify" : "latest"
-  , "JSONStream"    : "latest"
-  , "lodash"        : "latest"
-  , "request"       : "latest"
+  "dependencies":
+  { "async"         : "^1.5.2"
+  , "csv-streamify" : "^3.0.3"
+  , "JSONStream"    : "^1.0.7"
+  , "lodash"        : "^4.5.1"
+  , "request"       : "^2.69.0"
   },
   "scripts": {
   }
 }
-

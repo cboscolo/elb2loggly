@@ -113,6 +113,7 @@ var obscureURLParameter = function (url, parameter, obscureLength) {
 // Parse elb log into component parts.
 var parse_s3_log = function(data, encoding, done) {
 
+	var original_data = data;
   //If this is a HTTP load balander we get 12 fields
   //for HTTPs load balancers we get 15
   if ( data.length == 12 || data.length == 15 ) {
@@ -188,9 +189,15 @@ var parse_s3_log = function(data, encoding, done) {
         this.push(_.zipObject(COLUMNS, data));
         eventsParsed++;
       } else {
+      	var errorLog = {
+      		'timestamp' : original_data[0],
+      		'elb' : original_data[1],
+      		'elb_status_code' : original_data[7],
+      		'error' : 'ELB log length: ' + original_data.length + ' did not match COLUMNS length ' + COLUMNS.length
+      	};
+      	this.push(errorLog);
         //Log an error including the line that was excluded
-	  	console.error('ELB log length ' + data.length + ' did not match COLUMNS length ' + COLUMNS.length + ". " 
-	  		+ data.join(" "))
+	  		console.error('ELB log length ' + data.length + ' did not match COLUMNS length ' + COLUMNS.length + ". " + data.join(" "))
       }
       
       done();

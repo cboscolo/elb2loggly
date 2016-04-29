@@ -113,6 +113,7 @@ var obscureURLParameter = function (url, parameter, obscureLength) {
 // Parse elb log into component parts.
 var parse_s3_log = function(data, encoding, done) {
 
+	var original_data = data;
   //If this is a HTTP load balander we get 12 fields
   //for HTTPs load balancers we get 15
   if ( data.length == 12 || data.length == 15 ) {
@@ -126,20 +127,21 @@ var parse_s3_log = function(data, encoding, done) {
 
       //Split clientip:port and backendip:port at index 2,3
       //We need to be carefull here because of potential 5xx errors which may not include 
-      //the backend:port
-      //client:port
-      data.splice(3,1,data[3].split(':'));
       //backend:port
-      if (data[2].indexOf(':') > -1) {
+      if (data[3].indexOf(':') > -1) {
       	//If the field contains a colon we perform the normal split to get ip and port
-      	data.splice(2,1,data[2].split(':'));
+      	data.splice(3,1,data[3].split(':'));
       } else {
       	//We may get here if there was a 5xx error
       	//We will add 'dash' place holders for the missing data
       	//This is common for Apache logs when a field is blank, it is also more consistent with 
       	//the original ELB data
-      	data.splice(2,1,'-','-');
+      	data.splice(3,1,'-','-');
       }
+      
+      //client:port
+      data.splice(2,1,data[2].split(':'));
+
       
       //Ensure the data is flat
 	  data = _.flatten(data);
@@ -187,9 +189,15 @@ var parse_s3_log = function(data, encoding, done) {
         this.push(_.zipObject(COLUMNS, data));
         eventsParsed++;
       } else {
+      	var errorLog = {
+      		'timestamp' : original_data[0],
+      		'elb' : original_data[1],
+      		'elb_status_code' : original_data[7],
+      		'error' : 'ELB log length: ' + original_data.length + ' did not match COLUMNS length ' + COLUMNS.length
+      	};
+      	this.push(errorLog);
         //Log an error including the line that was excluded
-	  	console.error('ELB log length ' + data.length + ' did not match COLUMNS length ' + COLUMNS.length + ". " 
-	  		+ data.join(" "))
+	  		console.error('ELB log length ' + data.length + ' did not match COLUMNS length ' + COLUMNS.length + ". " + data.join(" "))
       }
       
       done();

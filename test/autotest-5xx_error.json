@@ -1,0 +1,21 @@
+{
+  "timestamp": "2016-03-03T12:02:37.384891Z",
+  "elb": "faux-elb",
+  "client_ip": "216.166.7.184",
+  "client_port": "17359",
+  "backend": "-",
+  "backend_port": "-",
+  "request_processing_time": -1,
+  "backend_processing_time": -1,
+  "response_processing_time": -1,
+  "elb_status_code": "503",
+  "backend_status_code": "0",
+  "received_bytes": 0,
+  "sent_bytes": 0,
+  "request_method": "GET",
+  "request_url": "http://domain.com:80/",
+  "request_query_params": "",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36",
+  "ssl_cipher": "-",
+  "ssl_protocol": "-"
+}

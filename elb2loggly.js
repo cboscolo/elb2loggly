@@ -304,14 +304,15 @@ exports.handler = function(event, context) {
 					     ' and upload to loggly' +
 					     ' due to an error: ' + err
 					     );
+             context.fail(err);
 			   } else {
 			       console.log(
 					   'Successfully uploaded ' + bucket + '/' + key +
 					   ' to ' + LOGGLY_URL + ". Parsed " + eventsParsed + " events."
 					   );
+             context.done();
 			   }
 
-			   context.done();
 		       }
 		       );
    }

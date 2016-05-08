@@ -1,0 +1,1 @@
+2016-03-03T12:02:37.384891Z faux-elb 216.166.7.184:17359 - -1 -1 -1 503 0 0 0 "GET http://domain.com:80/ HTTP/1.1" "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36" - -

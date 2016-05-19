@@ -18,6 +18,7 @@ var JSONStream = require('JSONStream');
 var LOGGLY_URL_BASE = 'https://logs-01.loggly.com/bulk/';
 var BUCKET_LOGGLY_TOKEN_NAME = 'loggly-customer-token';
 var BUCKET_LOGGLY_TAG_NAME = 'loggly-tag';
+var OBJECT_PREFIX_TAG_ENABLED = 'prefix-tag';
 var BUCKET_LOGGLY_PRIVATE_URL_PARAMS_NAME = 'elb2loggly-private-url-params';
 
 var LOGGLY_URL = null;
@@ -228,6 +229,7 @@ exports.handler = function(event, context) {
         };
 
         s3.getBucketTagging(params, function(err, data) {
+          var tags = [];
           if (err) {
             next(err);
             console.log(err, err.stack);
@@ -242,7 +244,15 @@ exports.handler = function(event, context) {
 
                 // If the 'loggly tag' tag is set we use that
               if (s3tag[BUCKET_LOGGLY_TAG_NAME]) {
-                LOGGLY_URL += '/tag/' + s3tag[BUCKET_LOGGLY_TAG_NAME];
+                tags.push(s3tag[BUCKET_LOGGLY_TAG_NAME])
+              }
+                // If the 'object prefix' tag is set we use that
+              if (s3tag[OBJECT_PREFIX_TAG_ENABLED]) {
+                tags.push(key.split('/')[0]);
+              }
+                // Generate URL with tags
+              if (tags.length) {
+                LOGGLY_URL += '/tag/' + tags.join(',');
               }
             } else {
               LOGGLY_URL = DEFAULT_LOGGLY_URL;

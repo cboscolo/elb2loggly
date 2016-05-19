@@ -33,7 +33,7 @@ For all of the AWS setup, I used the AWS console following [this example](http:/
     * Upload lambda function (zip file you made above.)
     * **Handler*:** *elb2loggly.handler*
     * **Role*:** In the drop down click "S3 execution role". (This will open a new window to create the role.) Before clicking the "Allow" button to save this new Role, click the "> View Policy Document", then edit and change the Aciton from "s3:GetObject" to "s3:Get*"
-    * I left the memory at 128MB.  In my testing with ELBs set upload every 5 minutes this worked for me.  You may need to bump this up if your ELB logs are larger.  
+    * I left the memory at 128MB.  In my testing with ELBs set upload every 5 minutes this worked for me.  You may need to bump this up if your ELB logs are larger.
     * Same advice for Timer, I set it to 10 seconds.
 2. Configure Event Source to call elb2loggly when logs added to S3 bucket.
   1. https://console.aws.amazon.com/lambda/home
@@ -47,21 +47,24 @@ Using S3 Management Console click the bucket that contains your ELB logs.
   1. Under Properties -> Tags add the following tag:
     * **Key:** loggly-customer-token
     * **Value:** *your-loggly-customer-token*
-  2. And optionally this tag (will tag log entries in loggly):
+  2. Optionally this tag (will tag log entries in loggly):
     * **Key:** loggly-tag
     * **Value:** *aws-elb* (Or what ever you want.)
+  3. And this tag (will add the ELB log prefix as additional tag):
+    * **Key:** prefix-tag
+    * **Value:** *true* (Or what ever you want.)
 
 ### Private URL parameters
 If your ELB logs contain private URL parameters such as authentication tokens, e.g.:
-   
+
   *https://api.loggly.com/getinfo?infoid=45&authToken=kjhs87234kjhsdf897234kjhs01ka9234*
-   
+
 you can obscure this information when sending the data to loggly. Add an additional tag to your S3 bucket:
   * **Key:** elb2loggly-private-url-params
   * **Value:** *authToken/10*
 
 This will obscure all *authToken* parameters with an obscure length of *10*, e.g.:
-  
+
   *https://api.loggly.com/getinfo?infoid=45&authToken=kjhs87234k...*
 
 Notes:

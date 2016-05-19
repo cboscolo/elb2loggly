@@ -51,8 +51,8 @@ Using S3 Management Console click the bucket that contains your ELB logs.
     * **Key:** loggly-tag
     * **Value:** *aws-elb* (Or what ever you want.)
   3. And this tag (will add the ELB log prefix as additional tag):
-    * **Key:** prefix-tag
-    * **Value:** *true* (Or what ever you want.)
+    * **Key:** add-log-prefix-tag
+    * **Value:** *true* (All other values will disable the extra tag)
 
 ### Private URL parameters
 If your ELB logs contain private URL parameters such as authentication tokens, e.g.:

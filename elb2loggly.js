@@ -18,7 +18,7 @@ var JSONStream = require('JSONStream');
 var LOGGLY_URL_BASE = 'https://logs-01.loggly.com/bulk/';
 var BUCKET_LOGGLY_TOKEN_NAME = 'loggly-customer-token';
 var BUCKET_LOGGLY_TAG_NAME = 'loggly-tag';
-var OBJECT_PREFIX_TAG_ENABLED = 'prefix-tag';
+var OBJECT_PREFIX_TAG_ENABLED = 'add-log-prefix-tag';
 var BUCKET_LOGGLY_PRIVATE_URL_PARAMS_NAME = 'elb2loggly-private-url-params';
 
 var LOGGLY_URL = null;
@@ -247,7 +247,7 @@ exports.handler = function(event, context) {
                 tags.push(s3tag[BUCKET_LOGGLY_TAG_NAME])
               }
                 // If the 'object prefix' tag is set we use that
-              if (s3tag[OBJECT_PREFIX_TAG_ENABLED]) {
+              if (s3tag[OBJECT_PREFIX_TAG_ENABLED] && s3tag[OBJECT_PREFIX_TAG_ENABLED] == 'true') {
                 tags.push(key.split('/')[0]);
               }
                 // Generate URL with tags

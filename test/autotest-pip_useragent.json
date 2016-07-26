@@ -1,0 +1,21 @@
+{
+  "timestamp": "2016-06-01T14:09:00.418027Z",
+  "elb": "anaconda-org",
+  "client_ip": "10.2.3.4",
+  "client_port": "1057",
+  "backend": "10.5.6.7",
+  "backend_port": "80",
+  "request_processing_time": 0.000053 ,
+  "backend_processing_time": 0.050128,
+  "response_processing_time": 0.000046,
+  "elb_status_code": "200",
+  "backend_status_code": "200",
+  "received_bytes": 0,
+  "sent_bytes": 260,
+  "request_method": "GET",
+  "request_url": "https://pypi.anaconda.org:443/username/simple/virtualenv/",
+  "request_query_params": "",
+  "user_agent": "pip/8.1.2 {\\'cpu\\':\\'AMD64\\',\\'implementation\\':{\\'name\\':\\'CPython\\',\\'version\\':\\'2.7.11\\'},\\'installer\\':{\\'name\\':\\'pip\\',\\'version\\':\\'8.1.2\\'},\\'openssl_version\\':\\'OpenSSL 1.0.2d 9 Jul 2015\\',\\'python\\':\\'2.7.11\\',\\'system\\':{\\'name\\':\\'Windows\\',\\'release\\':\\'2012ServerR2\\'}}",
+  "ssl_cipher": "ECDHE-RSA-AES128-GCM-SHA256",
+  "ssl_protocol": "TLSv1.2"
+}

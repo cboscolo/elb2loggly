@@ -282,9 +282,20 @@ exports.handler = function(event, context) {
       },
 
       function upload(data, next) {
-          // Stream the logfile to loggly.
+        // csv-streamify does not properly handle strings with escaped double quotes.
+        // So: "hello \"world\"" is not parsed as one string. To handle this, rewrite
+        // the \" as \' so the are ignored by the csv-streamify parser.
+        // Note: This only works because the AWS log should not have \" anywhere except the
+        // user agenet field, and only in quoted strings.
+        var doubleToSingleQuote = function(data, encoding, done) {
+          var newStr = data.toString().replace(/\\"/g, '\\\'');
+          this.push(newStr);
+          done();
+        };
 
         var csvToJson = csv({objectMode: true, delimiter: ' '});
+        var transquote = new Transform({objectMode: true});
+        transquote._transform = doubleToSingleQuote;
         var parser = new Transform({objectMode: true});
         parser._transform = parseS3Log;
         var jsonToStrings = JSONStream.stringify(false);
@@ -296,6 +307,7 @@ exports.handler = function(event, context) {
         console.log('Using Loggly endpoint: ' + LOGGLY_URL);
 
         bufferStream
+         .pipe(transquote)
          .pipe(csvToJson)
          .pipe(parser)
          .pipe(jsonToStrings)

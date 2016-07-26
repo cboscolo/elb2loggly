@@ -20,7 +20,7 @@ var lambdaExecRole = 'arn:aws:iam::*:role/lambda_s3_exec_role';
 
 // These config options are passed into the running Lambda func.
 var cfg = {
-  LOGGLY_TOKEN: null,
+  LOGGLY_TOKEN: null
 };
 
 // Lambda config options.

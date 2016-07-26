@@ -37,7 +37,8 @@
     "request": "^2.69.0"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha --recursive",
-    "lint": "./node_modules/eslint/bin/eslint.js *.js"
+    "test": "mocha --recursive",
+    "lint": "eslint *.js",
+    "bundle": "gulp package"
   }
 }

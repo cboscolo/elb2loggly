@@ -18,7 +18,7 @@ npm install
 ```
 Create elb2loggly.zip
 ```
-./node_modules/gulp/bin/gulp.js package
+npm run bundle
 ```
 The resulting zip (elb2loggly.zip) is what you will upload to AWS in step 1 below.
 
